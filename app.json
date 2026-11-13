@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "MOL",
+    "slug": "mol",
+    "scheme": "mol",
+    "version": "1.0.0",
+    "platforms": ["android"],
+    "plugins": ["expo-router"]
+  }
+}
