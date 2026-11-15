@@ -1,66 +1,45 @@
-# Three-agent workflow
+# Workflow — one Claude Code session per ticket
 
-Three separate Claude Code sessions per ticket. Each starts fresh, so no agent marks its own homework. No CI: Gate is the CI.
+One ticket, one branch, one session, one PR. No CI: the CHECK phase is the CI. You run every git command and you merge.
 
-| Agent | Job | Writes code? | Ends with |
-| --- | --- | --- | --- |
-| Build | Takes one ticket through SPEC → RED → GREEN → REFACTOR | Yes | A filled PR description |
-| Hunt | Reads the diff cold and hunts for what Build missed | No | Numbered findings, each with severity |
-| Gate | Runs the checks, rules on every finding, says PASS or BLOCK | No | A verdict with reasons |
+## Phases — the agent stops after each
 
-You run every git command and you merge.
+| Phase | Agent does | Stops with |
+| --- | --- | --- |
+| SPEC | Restates the ticket, lists files and open questions | Questions, or "none" |
+| RED | Writes failing tests from the acceptance list | Test list, all failing for the right reason |
+| GREEN | Makes them pass one at a time | All green, files changed |
+| REFACTOR | Applies docs/STANDARDS.md without changing behaviour | Anything still breaking a rule |
+| REVIEW | Reads `git status` and `git diff main`, and opens every untracked file, as a stranger would | Numbered findings: block / fix / note |
+| CHECK | Runs tsc and tests, ticks every acceptance line and standard | PASS or BLOCK, and the filled PR description |
 
-## One ticket, start to finish
+REVIEW is where the old Hunt agent went, CHECK is where Gate went. Same session, so it is a weaker check than a fresh one — REVIEW must name what it looked at, not just say "looks fine".
+
+## A ticket, start to finish
 
 ```
 git switch main && git pull
-git switch -c mol-003-condition-score
+git switch -c mol-002-rules
+claude
 ```
 
-**1 · Build** (new session)
 ```
 Read CLAUDE.md, docs/STANDARDS.md and docs/TICKETS.md.
-You are Build. Ticket MOL-003.
-Phase SPEC: restate the ticket in three lines, list open questions, stop.
+Ticket MOL-002. Phase SPEC.
 ```
-Then `phase RED`, `phase GREEN`, `phase REFACTOR`, each in turn. Last:
-```
-Fill .github/pull_request_template.md for this ticket. Leave Hunt and Gate blank.
-```
-You commit:
+
+Then, one message each: `Phase RED.` · `Phase GREEN.` · `Phase REFACTOR.` · `Phase REVIEW.` · `Fix the block and fix findings, tests first.` · `Phase CHECK.`
+
+On PASS:
+
 ```
 git add -A
-git commit -m "MOL-003: conditionScore with test vectors"
-git push -u origin mol-003-condition-score
+git commit -m "MOL-002: rules weights and bands, typed loader"
+git push -u origin mol-002-rules
 gh pr create --fill
-```
-
-**2 · Hunt** (new session)
-```
-Read CLAUDE.md and docs/STANDARDS.md.
-You are Hunt. Review `git diff main...HEAD` against ticket MOL-003 in docs/TICKETS.md.
-Do not edit any file. Find: acceptance lines not covered by a test, logic bugs,
-edge cases, and every standards breach. Number each finding with severity
-(block / fix / note). If you find nothing, say what you checked.
-```
-Paste the findings into the PR. Back to the Build session for any `block` or `fix`:
-```
-Fix Hunt findings 1 and 3. Tests first. Explain why you're not fixing 2.
-```
-Commit, push.
-
-**3 · Gate** (new session)
-```
-Read CLAUDE.md, docs/STANDARDS.md, docs/TICKETS.md.
-You are Gate. Ticket MOL-003. Do not edit any file.
-Run npx tsc --noEmit and npm test. Check every acceptance line has a passing
-test. Check every standard against `git diff main...HEAD`. Check each Hunt
-finding is fixed or answered. Reply PASS or BLOCK, with one line per reason.
-```
-PASS:
-```
 gh pr merge --squash --delete-branch
 ```
-Set the ticket to `merged` in docs/TICKETS.md.
 
-BLOCK: back to Build with Gate's reasons, then Gate again. Two BLOCKs on the same ticket → stop and split the ticket.
+Set the ticket to `merged` in docs/TICKETS.md. `/clear` before the next ticket.
+
+On BLOCK twice for the same ticket: stop and split it.

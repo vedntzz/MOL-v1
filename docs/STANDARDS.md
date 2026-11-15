@@ -1,6 +1,6 @@
 # Coding standards
 
-Every agent reads this before touching code. Gate checks every line of it.
+Read this before touching code. The CHECK phase ticks every line of it.
 
 ## Code
 - Tests before code. A ticket's first commit is failing tests.
@@ -19,7 +19,7 @@ Every agent reads this before touching code. Gate checks every line of it.
 - Test names read as sentences: `walk-away never exceeds market price`.
 
 ## Git
-- Agents never run git. You run every git command.
+- Agents may run read-only git (`status`, `diff`, `log`). Everything else is yours.
 - One ticket = one branch = one PR. Branch: `mol-<nnn>-<slug>`.
 - Commit messages: `MOL-<nnn>: <imperative summary>`.
 - Squash-merge. `main` always passes `npx tsc --noEmit` and `npm test`.
