@@ -4,24 +4,20 @@ MOL values a used tractor for a dealership buying desk. The mechanic scores 17 c
 
 ## Read before any task
 
-1. `docs/STANDARDS.md` — the rules Gate enforces. Non-negotiable.
+1. `docs/STANDARDS.md` — the rules CHECK enforces. Non-negotiable.
 2. `docs/TICKETS.md` — your ticket. Do only what it lists.
 3. `docs/INSPECTION_STANDARD.md` — the 17 checks, weights, bands, test vectors.
 4. `DESIGN.md` — the only source of colours, type and components.
 5. `docs/screens/` — the approved screens. If a screen and DESIGN.md disagree, DESIGN.md wins; say so in your report.
 6. `PRODUCT.md` — who it's for and why, when a decision needs context.
 
-## Your role
+## How you work
 
-You are one of three agents. Your prompt says which.
+One ticket per session, in phases: SPEC → RED → GREEN → REFACTOR → REVIEW → CHECK. Stop after each and wait. Details in `docs/WORKFLOW.md`.
 
-| Role | Does | Never |
-| --- | --- | --- |
-| Build | One ticket: SPEC → RED → GREEN → REFACTOR, stopping after each | Touches anything outside the ticket |
-| Hunt | Reads `git diff main...HEAD` cold, numbers findings by severity | Edits a file |
-| Gate | Runs the checks, rules on every Hunt finding, says PASS or BLOCK | Edits a file |
-
-No agent ever runs git. The human runs every git command and merges.
+- **REVIEW**: read `git status` and `git diff main`, and open every untracked file, as a stranger. Number findings block / fix / note, and say what you checked.
+- **CHECK**: run tsc and tests, tick every acceptance line and standard, reply PASS or BLOCK, fill the PR template.
+- Read-only git only: `status`, `diff`, `log`. Never add, commit, push or merge — the human does.
 
 ## Architecture
 
@@ -86,7 +82,7 @@ docs/
 
 Tests sit next to the file they test: `priceTractor.ts` → `priceTractor.test.ts`.
 
-## Invariants — break one and Gate blocks
+## Invariants — break one and CHECK blocks
 
 1. **The slip never shows market price, margin or walk-away.** Enforced by type: `slipHtml()` accepts only `SlipView`, which has no such fields. `toSlipView()` is the only way to make one.
 2. **Open ≤ walk-away, and neither is below 0.**

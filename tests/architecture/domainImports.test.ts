@@ -1,12 +1,31 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { dirname, join, resolve, sep } from 'path';
 
 const DOMAIN_DIR = resolve(__dirname, '../../src/domain');
+const DATA_DIR = resolve(__dirname, '../../src/data');
 const SAMPLE_FILE = join(DOMAIN_DIR, 'pricing', 'priceTractor.ts');
 
-// RED stub: replaced by the real scanner in GREEN.
-function forbiddenImportsIn(_source: string, _fromFile: string): string[] {
-  return [];
+// Matches the quoted specifier in: from '…', import '…', import('…'), require('…').
+const SPECIFIER = /(?:\bfrom\s*|^\s*import\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/gm;
+
+function importSpecifiersIn(source: string): string[] {
+  return [...source.matchAll(SPECIFIER)].map((match) => match[1] ?? '');
+}
+
+function isReactOrExpoPackage(specifier: string): boolean {
+  return /^(react|expo)($|[-/])/.test(specifier) || /^@(expo|react-native[^/]*|react-navigation)\//.test(specifier);
+}
+
+function reachesDataLayer(specifier: string, fromFile: string): boolean {
+  if (!specifier.startsWith('.')) return /^src\/data($|\/)/.test(specifier);
+  const target = resolve(dirname(fromFile), specifier);
+  return target === DATA_DIR || target.startsWith(DATA_DIR + sep);
+}
+
+function forbiddenImportsIn(source: string, fromFile: string): string[] {
+  return importSpecifiersIn(source).filter(
+    (specifier) => isReactOrExpoPackage(specifier) || reachesDataLayer(specifier, fromFile),
+  );
 }
 
 function domainSourceFiles(dir: string): string[] {
@@ -56,6 +75,22 @@ describe('domain import scanner', () => {
 
   test('flags an absolute src/data import', () => {
     expect(forbiddenImportsIn("import { x } from 'src/data/db/schema';", SAMPLE_FILE)).toEqual(['src/data/db/schema']);
+  });
+
+  test('flags an import from a scoped @react-native package', () => {
+    expect(forbiddenImportsIn("import s from '@react-native-async-storage/async-storage';", SAMPLE_FILE)).toEqual([
+      '@react-native-async-storage/async-storage',
+    ]);
+  });
+
+  test('flags an import from a scoped @react-navigation package', () => {
+    expect(forbiddenImportsIn("import { useNavigation } from '@react-navigation/native';", SAMPLE_FILE)).toEqual([
+      '@react-navigation/native',
+    ]);
+  });
+
+  test('allows a scoped package that merely starts with the letters react', () => {
+    expect(forbiddenImportsIn("import r from '@reactive/math';", SAMPLE_FILE)).toEqual([]);
   });
 
   test('allows an import from another domain module', () => {
