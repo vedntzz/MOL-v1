@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { join, relative, resolve, sep } from 'path';
 import { en } from '../../src/strings/en';
 
 const ROOT = resolve(__dirname, '../..');
@@ -29,7 +29,20 @@ function readOrEmpty(relativePath: string): string {
   return existsSync(path) ? readFileSync(path, 'utf8') : '';
 }
 
+function screenRouteFilesIn(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) return screenRouteFilesIn(path);
+    if (!name.endsWith('.tsx') || name === '_layout.tsx') return [];
+    return [relative(join(ROOT, 'app'), path).slice(0, -'.tsx'.length).split(sep).join('/')];
+  });
+}
+
 describe('routes', () => {
+  test('the route files in app/ and the keys in en.screens are the same set', () => {
+    expect(screenRouteFilesIn(join(ROOT, 'app')).sort()).toEqual([...SCREEN_ROUTES].sort());
+  });
+
   test.each(SCREEN_ROUTES)('app/%s.tsx exists', (route) => {
     expect(existsSync(join(ROOT, 'app', `${route}.tsx`))).toBe(true);
   });
