@@ -1,4 +1,5 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join, relative, resolve, sep } from 'path';
 import { en } from '../../src/strings/en';
 
@@ -29,18 +30,33 @@ function readOrEmpty(relativePath: string): string {
   return existsSync(path) ? readFileSync(path, 'utf8') : '';
 }
 
-function screenRouteFilesIn(dir: string): string[] {
+function isScreenRouteFile(name: string): boolean {
+  return name.endsWith('.tsx') && name !== '_layout.tsx' && !name.startsWith('+');
+}
+
+function screenRouteFilesIn(dir: string, appDir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) return screenRouteFilesIn(path);
-    if (!name.endsWith('.tsx') || name === '_layout.tsx') return [];
-    return [relative(join(ROOT, 'app'), path).slice(0, -'.tsx'.length).split(sep).join('/')];
+    if (statSync(path).isDirectory()) return screenRouteFilesIn(path, appDir);
+    if (!isScreenRouteFile(name)) return [];
+    return [relative(appDir, path).slice(0, -'.tsx'.length).split(sep).join('/')];
   });
 }
 
 describe('routes', () => {
   test('the route files in app/ and the keys in en.screens are the same set', () => {
-    expect(screenRouteFilesIn(join(ROOT, 'app')).sort()).toEqual([...SCREEN_ROUTES].sort());
+    expect(screenRouteFilesIn(join(ROOT, 'app'), join(ROOT, 'app')).sort()).toEqual([...SCREEN_ROUTES].sort());
+  });
+
+  test('screen route files skip layouts and expo-router files starting with +', () => {
+    const appDir = mkdtempSync(join(tmpdir(), 'mol-app-'));
+    mkdirSync(join(appDir, 'inspect'));
+    for (const file of ['index.tsx', '_layout.tsx', '+not-found.tsx', '+html.tsx', 'inspect/rc.tsx']) {
+      writeFileSync(join(appDir, file), '');
+    }
+    const routes = screenRouteFilesIn(appDir, appDir).sort();
+    rmSync(appDir, { recursive: true });
+    expect(routes).toEqual(['index', 'inspect/rc']);
   });
 
   test.each(SCREEN_ROUTES)('app/%s.tsx exists', (route) => {

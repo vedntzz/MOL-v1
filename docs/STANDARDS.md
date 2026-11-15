@@ -6,7 +6,7 @@ Read this before touching code. The CHECK phase ticks every line of it.
 - Tests before code. A ticket's first commit is failing tests.
 - One-line comments only. No block comments, no commented-out code.
 - Names explain the function without opening it: `bandForScore`, not `getBand`.
-- No function over 20 lines. Split it.
+- No function over 20 lines. Split it. `describe` and `it` blocks are exempt; helpers inside tests are not.
 - Simplest pattern that works. A new abstraction needs a reason in the PR.
 - `src/domain/` is pure: no React, no SQLite, no Date.now(), no network. Time comes in as an argument.
 - No rupee figure, weight, band or rate outside `src/data/rules/rules.json`.

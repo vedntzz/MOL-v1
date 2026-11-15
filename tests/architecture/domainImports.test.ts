@@ -13,7 +13,7 @@ function importSpecifiersIn(source: string): string[] {
 }
 
 function isReactOrExpoPackage(specifier: string): boolean {
-  return /^(react|expo)($|[-/])/.test(specifier) || specifier.startsWith('@expo/');
+  return /^(react|expo)($|[-/])/.test(specifier) || /^@(expo|react-native[^/]*|react-navigation)\//.test(specifier);
 }
 
 function reachesDataLayer(specifier: string, fromFile: string): boolean {
@@ -75,6 +75,22 @@ describe('domain import scanner', () => {
 
   test('flags an absolute src/data import', () => {
     expect(forbiddenImportsIn("import { x } from 'src/data/db/schema';", SAMPLE_FILE)).toEqual(['src/data/db/schema']);
+  });
+
+  test('flags an import from a scoped @react-native package', () => {
+    expect(forbiddenImportsIn("import s from '@react-native-async-storage/async-storage';", SAMPLE_FILE)).toEqual([
+      '@react-native-async-storage/async-storage',
+    ]);
+  });
+
+  test('flags an import from a scoped @react-navigation package', () => {
+    expect(forbiddenImportsIn("import { useNavigation } from '@react-navigation/native';", SAMPLE_FILE)).toEqual([
+      '@react-navigation/native',
+    ]);
+  });
+
+  test('allows a scoped package that merely starts with the letters react', () => {
+    expect(forbiddenImportsIn("import r from '@reactive/math';", SAMPLE_FILE)).toEqual([]);
   });
 
   test('allows an import from another domain module', () => {
