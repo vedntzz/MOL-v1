@@ -1,19 +1,7 @@
 import { en } from './en';
 
-const SCREEN_ROUTES = [
-  'index',
-  'settings',
-  'inspect/rc',
-  'inspect/use',
-  'inspect/photos',
-  'inspect/engine',
-  'inspect/drive',
-  'inspect/control',
-  'result',
-  'slip',
-  'purchase',
-  'settle/[id]',
-] as const;
+// Object.keys widens to string[]; the keys come from en.screens itself.
+const SCREEN_ROUTES = Object.keys(en.screens) as (keyof typeof en.screens)[];
 
 test('every route has a screen name', () => {
   for (const route of SCREEN_ROUTES) {

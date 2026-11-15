@@ -1,22 +1,10 @@
 import { existsSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { en } from '../../src/strings/en';
 
 const ROOT = resolve(__dirname, '../..');
 
-const SCREEN_ROUTES = [
-  'index',
-  'settings',
-  'inspect/rc',
-  'inspect/use',
-  'inspect/photos',
-  'inspect/engine',
-  'inspect/drive',
-  'inspect/control',
-  'result',
-  'slip',
-  'purchase',
-  'settle/[id]',
-] as const;
+const SCREEN_ROUTES = Object.keys(en.screens);
 
 const LAYOUT_FILES = ['app/_layout.tsx', 'app/inspect/_layout.tsx'] as const;
 
